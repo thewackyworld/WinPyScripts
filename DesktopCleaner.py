@@ -11,24 +11,29 @@ def move_with_rename(src, dst_folder):
         counter += 1
     shutil.move(src, dst)
 
-desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
-destination_path = os.path.join("D:\\DesktopArchive")
-shortcut_path = os.path.join(destination_path, "Shortcuts")
-folders_path = os.path.join(destination_path, "Folders")
-game_path = os.path.join(destination_path, "Games_Shortcuts")
-pdf_path = os.path.join(destination_path, "Pdfs")
-zip_path = os.path.join(destination_path, "Zip_files")
-others_path = os.path.join(destination_path, "Others")
-image_path = os.path.join(destination_path, "Images")
+desktop_path = os.path.join(os.path.expanduser("~"), "Desktop") # finds the desktop of the pc
 
-os.makedirs(shortcut_path, exist_ok=True)
-os.makedirs(destination_path, exist_ok=True)
-os.makedirs(folders_path, exist_ok=True)
-os.makedirs(game_path, exist_ok=True)
-os.makedirs(pdf_path, exist_ok=True)
-os.makedirs(zip_path, exist_ok=True)
-os.makedirs(others_path, exist_ok=True)
-os.makedirs(image_path, exist_ok=True)
+# should be read from the config file
+destination_path = "" #os.path.join("D:\\DesktopArchive")
+
+# this will happen on the gui only first time it is run
+# shortcut_path = os.path.join(destination_path, "Shortcuts")
+# folders_path = os.path.join(destination_path, "Folders")
+# game_path = os.path.join(destination_path, "Games_Shortcuts")
+# pdf_path = os.path.join(destination_path, "Pdfs")
+# zip_path = os.path.join(destination_path, "Zip_files")
+# others_path = os.path.join(destination_path, "Others")
+# image_path = os.path.join(destination_path, "Images")
+
+# move it to gui code
+# os.makedirs(shortcut_path, exist_ok=True)
+# os.makedirs(destination_path, exist_ok=True)
+# os.makedirs(folders_path, exist_ok=True)
+# os.makedirs(game_path, exist_ok=True)
+# os.makedirs(pdf_path, exist_ok=True)
+# os.makedirs(zip_path, exist_ok=True)
+# os.makedirs(others_path, exist_ok=True)
+# os.makedirs(image_path, exist_ok=True)
 
 for filename in os.listdir(desktop_path):
     file_path = os.path.join(desktop_path, filename)
