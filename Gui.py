@@ -21,6 +21,9 @@ class FileSelector:
         self.selected_option = tk.StringVar()
         self.selected_option.set("option1")  # Default selection
         
+        self.selected_time = tk.StringVar()
+        self.selected_time.set("00:00")  # Default time
+
         self.create_widgets()
     
     def create_widgets(self):
@@ -35,9 +38,9 @@ class FileSelector:
         file_frame.pack(pady=20, padx=20, fill="x")
         
         # Browse button
-        browse_btn = tk.Button(file_frame, text="Browse File", 
+        browse_btn = tk.Button(file_frame, text="Select destination", 
                               command=self.browse_file,
-                              font=("Arial", 12),
+                              font=("Arial", 10),
                               bg="lightgreen", width=15)
         browse_btn.pack(side="left", padx=(0, 10))
         
@@ -67,6 +70,18 @@ class FileSelector:
             ("once", "option5")
         ]
         
+        # Add this to your existing GUI
+        time_frame = tk.LabelFrame(self.root, text="Schedule Time")
+        time_frame.pack(pady=20)
+
+        # Hour dropdown
+        hour_combo = ttk.Combobox(time_frame, values=[f"{i:02d}" for i in range(1, 13)])
+        hour_combo.pack(side="left", padx=5)
+
+        # AM/PM
+        ampm_combo = ttk.Combobox(time_frame, values=["AM", "PM"])
+        ampm_combo.pack(side="left", padx=5)
+
         for text, value in options:
             radio_btn = tk.Radiobutton(options_frame, 
                                       text=text,
@@ -77,7 +92,7 @@ class FileSelector:
             radio_btn.pack(anchor="w", pady=2)
         
         # Process button
-        process_btn = tk.Button(self.root, text="Clean",
+        process_btn = tk.Button(self.root, text="Save Settings",
                                command=self.SetTask,
                                font=("Arial", 14, "bold"),
                                bg="orange", fg="white",
