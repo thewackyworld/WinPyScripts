@@ -1,3 +1,4 @@
+import configparser
 import os
 import shutil
 
@@ -11,29 +12,22 @@ def move_with_rename(src, dst_folder):
         counter += 1
     shutil.move(src, dst)
 
-desktop_path = os.path.join(os.path.expanduser("~"), "Desktop") # finds the desktop of the pc
+def load_config(filename = "config.ini"):
+        config = configparser.ConfigParser()
+        config.read(filename)
+        return config
 
-# should be read from the config file
-destination_path = "" #os.path.join("D:\\DesktopArchive")
+config = load_config()
+desktop_path = config['PATHS']['desktop']
+destination_path = config['PATHS']['destination_path'] 
+shortcut_path = config['DPATHS']['shortcut_path']
+folders_path = config['DPATHS']['folders_path']
+game_path = config['DPATHS']['game_path']
+pdf_path = config['DPATHS']['pdf_path']
+zip_path = config['DPATHS']['zip_path']
+others_path = config['DPATHS']['others_path']
+image_path = config['DPATHS']['image_path']
 
-# this will happen on the gui only first time it is run
-# shortcut_path = os.path.join(destination_path, "Shortcuts")
-# folders_path = os.path.join(destination_path, "Folders")
-# game_path = os.path.join(destination_path, "Games_Shortcuts")
-# pdf_path = os.path.join(destination_path, "Pdfs")
-# zip_path = os.path.join(destination_path, "Zip_files")
-# others_path = os.path.join(destination_path, "Others")
-# image_path = os.path.join(destination_path, "Images")
-
-# move it to gui code
-# os.makedirs(shortcut_path, exist_ok=True)
-# os.makedirs(destination_path, exist_ok=True)
-# os.makedirs(folders_path, exist_ok=True)
-# os.makedirs(game_path, exist_ok=True)
-# os.makedirs(pdf_path, exist_ok=True)
-# os.makedirs(zip_path, exist_ok=True)
-# os.makedirs(others_path, exist_ok=True)
-# os.makedirs(image_path, exist_ok=True)
 
 for filename in os.listdir(desktop_path):
     file_path = os.path.join(desktop_path, filename)
