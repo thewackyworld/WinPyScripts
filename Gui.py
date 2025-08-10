@@ -4,6 +4,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinter import ttk
 import configparser
+import subprocess
+import sys
 
 class FileSelector:
     def __init__(self, root):
@@ -123,8 +125,11 @@ class FileSelector:
         messagebox.showinfo("Shelves Created", 
                            "Setting task.....")
         
-        self.create_task(config)
-        # Here i will set the task to run DesktopCleaner.py on the selected schedule
+        if self.create_task(config):
+            messagebox.showinfo("Task Created", 
+                               f"Desktop Cleaner is set to run on {selected_text} schedule.")
+        else:
+            messagebox.showerror("Error", "Failed to create the task. Please check the console for details.")
 
     def load_config(self ,filename = "config.ini"):
         config = configparser.ConfigParser()
@@ -182,12 +187,30 @@ class FileSelector:
             os.makedirs(path, exist_ok=True)
 
     def create_task(self, config):
-        # Here you would implement the logic to create a scheduled task
-        # using the selected runtime option and the paths from the config.
-        # This is a placeholder for demonstration purposes.
-        print(f"Creating task with runtime: {config['RUNTIME']['Choice']} at {config['RUNTIME']['Time']}")
-        print("Task created successfully!")
-
+        script_path = os.path.abspath("DesktopCleaner.py")
+        python_path = sys.executable
+        task_name = "FishsDesktopCleanerTask"
+        schedule_time = config['RUNTIME']['Time']
+        cmd = [
+            "schtasks",
+            "/create",
+            "/tn", task_name, # Task name
+            "/tr", f'"{python_path}" "{script_path}"',  # Task to run
+            "/sc", "daily",  # Schedule type
+            "/st", schedule_time,  # Start time
+            "/f"  # Force create (overwrites if exists)
+        ]
+        try:
+            # Run the command
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            print(f"Task '{task_name}' created successfully!")
+            print(f"Will run daily at {schedule_time}")
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"Error creating task: {e}")
+            print(f"Error output: {e.stderr}")
+            return False
+        
 # Create and run the application
 if __name__ == "__main__":
     root = tk.Tk()
