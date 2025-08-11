@@ -145,7 +145,15 @@ class FileSelector:
                                font=("Arial", 14, "bold"),
                                bg="orange", fg="white",
                                width=20, height=2)
-        process_btn.pack(pady=20)
+        process_btn.pack(padx=20)
+
+        # Delete button
+        delete_btn = tk.Button(self.root, text="Delete Old Task",
+                               command=self.delete_task,
+                               font=("Arial", 10, "bold"),
+                               bg="red", fg="white",
+                               width=15, height=2)
+        delete_btn.pack(pady=5)
 
         # Initial time display update
         self.update_time_display()
@@ -355,7 +363,15 @@ class FileSelector:
             print(f"Error creating task: {e}")
             print(f"Error output: {e.stderr}")
             return False
+    def delete_task(self):
+        task_name = "FishsDesktopCleanerTask"
+        cmd = ["schtasks", "/delete", "/tn", task_name, "/f"]
         
+        try:
+            subprocess.run(cmd, capture_output=True, text=True, check=True)
+            messagebox.showinfo("Task Deleted", f"Task '{task_name}' has been deleted successfully.")
+        except subprocess.CalledProcessError as e:
+            messagebox.showerror("Error", f"Failed to delete task '{task_name}'.\n{e.stderr}")
 # Create and run the application
 if __name__ == "__main__":
     root = tk.Tk()
