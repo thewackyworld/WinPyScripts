@@ -10,7 +10,7 @@ import sys
 class FileSelector:
     def __init__(self, root):
         self.root = root
-        self.root.title("Desktop Cleaner")
+        self.root.title("Aquarium desktop")
         self.root.geometry("600x700")
         
         # Variable to store selected file path
@@ -41,7 +41,7 @@ class FileSelector:
     
     def create_widgets(self):
         # Big title at the top
-        title_label = tk.Label(self.root, text="Desktop Cleaner", 
+        title_label = tk.Label(self.root, text=" Aquarium Cleaner", 
                               font=("Arial", 24, "bold"), 
                               fg="Gold", pady=20)
         title_label.pack()
@@ -145,7 +145,15 @@ class FileSelector:
                                font=("Arial", 14, "bold"),
                                bg="orange", fg="white",
                                width=20, height=2)
-        process_btn.pack(pady=20)
+        process_btn.pack(padx=20)
+
+        # Delete button
+        delete_btn = tk.Button(self.root, text="Delete Old Task",
+                               command=self.delete_task,
+                               font=("Arial", 10, "bold"),
+                               bg="red", fg="white",
+                               width=15, height=2)
+        delete_btn.pack(pady=5)
 
         # Initial time display update
         self.update_time_display()
@@ -272,7 +280,7 @@ class FileSelector:
         
         if self.create_task(config):
             messagebox.showinfo("Task Created", 
-                               f"Desktop Cleaner is set to run on {selected_text} schedule.")
+                               f"Aquarium Cleaner is set to run on {selected_text} schedule.")
         else:
             messagebox.showerror("Error", "Failed to create the task. Please check the console for details.")
 
@@ -331,31 +339,91 @@ class FileSelector:
         for key, path in config['DPATHS'].items():
             os.makedirs(path, exist_ok=True)
 
+    def get_resource_path(self, relative_path):
+        try:
+            # PyInstaller creates a temp folder and stores path in _MEIPASS
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+        return os.path.join(base_path, relative_path)
+    
     def create_task(self, config):
-        script_path = os.path.abspath("DesktopCleaner.py")
-        python_path = sys.executable
         task_name = "FishsDesktopCleanerTask"
         schedule_time = config['RUNTIME']['Time']
+        runtime_choice = config['RUNTIME']['Choice']
+        
+        if getattr(sys, 'frozen', False):
+            # Running as compiled executable - use bundled cleaner exe
+            cleaner_exe_path = self.get_resource_path("DesktopCleaner.exe")
+            
+            # Use a permanent location in AppData
+            import os
+            app_data_dir = os.path.join(os.path.expanduser("~"), "AppData", "Local", "AquariumCleaner")
+            os.makedirs(app_data_dir, exist_ok=True)
+            
+            permanent_cleaner = os.path.join(app_data_dir, "DesktopCleaner.exe")
+            permanent_config = os.path.join(app_data_dir, "config.ini")
+            
+            # Copy cleaner executable
+            if not os.path.exists(permanent_cleaner):
+                import shutil
+                shutil.copy2(cleaner_exe_path, permanent_cleaner)
+            
+            # Always update the config file
+            with open(permanent_config, 'w') as configfile:
+                config.write(configfile)
+            
+            print(f"Config saved to: {permanent_config}")  # Debug output
+            executable_path = permanent_cleaner
+        else:
+            # Development mode - use local files
+            executable_path = os.path.join("dist", "DesktopCleaner.exe")
+            if not os.path.exists(executable_path):
+                script_path = os.path.abspath("DesktopCleaner.py")
+                python_path = sys.executable
+                executable_path = f'"{python_path}" "{script_path}"'
+            else:
+                executable_path = f'"{executable_path}"'
+        
         cmd = [
             "schtasks",
             "/create",
-            "/tn", task_name, # Task name
-            "/tr", f'"{python_path}" "{script_path}"',  # Task to run
-            "/sc", "daily",  # Schedule type
-            "/st", schedule_time,  # Start time
-            "/f"  # Force create (overwrites if exists)
+            "/tn", task_name,
+            "/tr", executable_path,  # Run the executable directly
+            "/sc", runtime_choice if runtime_choice != "once" else "once",
+            "/st", schedule_time,
+            "/f"
         ]
+        
+        # Handle "once" option
+        if runtime_choice == "once":
+            from datetime import datetime, timedelta
+            tomorrow = datetime.now() + timedelta(days=1)
+            start_date = tomorrow.strftime("%m/%d/%Y")
+            cmd.extend(["/sd", start_date])
+        
+        print(f"Creating task to run: {executable_path}")  # Debug output
+        
         try:
-            # Run the command
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             print(f"Task '{task_name}' created successfully!")
-            print(f"Will run daily at {schedule_time}")
+            print(f"Will run {runtime_choice} at {schedule_time}")
             return True
         except subprocess.CalledProcessError as e:
             print(f"Error creating task: {e}")
             print(f"Error output: {e.stderr}")
             return False
+
+    def delete_task(self):
+        task_name = "FishsDesktopCleanerTask"
+        cmd = ["schtasks", "/delete", "/tn", task_name, "/f"]
         
+        try:
+            subprocess.run(cmd, capture_output=True, text=True, check=True)
+            messagebox.showinfo("Task Deleted", f"Task '{task_name}' has been deleted successfully.")
+        except subprocess.CalledProcessError as e:
+            messagebox.showerror("Error", f"Failed to delete task '{task_name}'.\n{e.stderr}")
+
 # Create and run the application
 if __name__ == "__main__":
     root = tk.Tk()
