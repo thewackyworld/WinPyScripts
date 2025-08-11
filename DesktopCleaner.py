@@ -19,7 +19,7 @@ def load_config(filename = "config.ini"):
 
 config = load_config()
 desktop_path = config['PATHS']['desktop']
-destination_path = config['PATHS']['destination_path'] 
+destination_path = config['PATHS']['destination'] 
 shortcut_path = config['DPATHS']['shortcut_path']
 folders_path = config['DPATHS']['folders_path']
 game_path = config['DPATHS']['game_path']
@@ -27,13 +27,13 @@ pdf_path = config['DPATHS']['pdf_path']
 zip_path = config['DPATHS']['zip_path']
 others_path = config['DPATHS']['others_path']
 image_path = config['DPATHS']['image_path']
-
+exceptions = config['EXCEPTIONS']['Name'].split(', ')
 
 for filename in os.listdir(desktop_path):
     file_path = os.path.join(desktop_path, filename)
     
     # Skip certain system folders if needed
-    if filename in ["Desktop.ini", "Codes"]:
+    if filename in exceptions:
         continue
         
     if os.path.isfile(file_path):

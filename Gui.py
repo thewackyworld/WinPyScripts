@@ -21,8 +21,21 @@ class FileSelector:
         self.selected_option = tk.StringVar()
         self.selected_option.set("option1")  # Default selection
         
-        self.selected_time = tk.StringVar()
-        self.selected_time.set("00:00")  # Default time
+        # Time selection variables
+        self.selected_hour = tk.StringVar()
+        self.selected_minute = tk.StringVar()
+        self.selected_ampm = tk.StringVar()
+        
+        # Set default time (current time)
+        from datetime import datetime
+        now = datetime.now()
+        hour_12 = now.hour if now.hour <= 12 else now.hour - 12
+        if hour_12 == 0:
+            hour_12 = 12
+        
+        self.selected_hour.set(f"{hour_12:02d}")
+        self.selected_minute.set(f"{now.minute:02d}")
+        self.selected_ampm.set("AM" if now.hour < 12 else "PM")
 
         self.create_widgets()
     
@@ -51,6 +64,52 @@ class FileSelector:
                              anchor="w", padx=10)
         path_label.pack(side="left", fill="x", expand=True)
         
+        # TIME SELECTION FRAME
+        time_frame = tk.LabelFrame(self.root, text="Schedule Time", 
+                                  font=("Arial", 12, "bold"),
+                                  padx=15, pady=15)
+        time_frame.pack(pady=20, padx=20, fill="x")
+        
+        time_controls = tk.Frame(time_frame)
+        time_controls.pack()
+        
+        # Hour dropdown
+        tk.Label(time_controls, text="Hour:", font=("Arial", 11)).grid(row=0, column=0, padx=5)
+        self.hour_combo = ttk.Combobox(time_controls, textvariable=self.selected_hour,
+                                      values=[f"{i:02d}" for i in range(1, 13)], 
+                                      width=8, state="readonly")
+        self.hour_combo.grid(row=0, column=1, padx=5)
+        
+        # Minute dropdown  
+        tk.Label(time_controls, text="Minute:", font=("Arial", 11)).grid(row=0, column=2, padx=5)
+        self.minute_combo = ttk.Combobox(time_controls, textvariable=self.selected_minute,
+                                        values=[f"{i:02d}" for i in range(0, 60, 5)], 
+                                        width=8, state="readonly")
+        self.minute_combo.grid(row=0, column=3, padx=5)
+        
+        # AM/PM dropdown
+        tk.Label(time_controls, text="AM/PM:", font=("Arial", 11)).grid(row=0, column=4, padx=5)
+        self.ampm_combo = ttk.Combobox(time_controls, textvariable=self.selected_ampm,
+                                      values=["AM", "PM"], width=8, state="readonly")
+        self.ampm_combo.grid(row=0, column=5, padx=5)
+        
+        # Display selected time in 24-hour format
+        self.time_display_frame = tk.Frame(time_frame)
+        self.time_display_frame.pack(pady=(15, 0))
+        
+        tk.Label(self.time_display_frame, text="Selected Time (24-hour):", 
+                font=("Arial", 10)).pack(side="left")
+        self.time_display_label = tk.Label(self.time_display_frame, text="00:00", 
+                                          font=("Arial", 12, "bold"), 
+                                          bg="lightyellow", padx=10, relief="sunken")
+        self.time_display_label.pack(side="left", padx=(10, 0))
+        
+        # Update display when selections change
+        self.hour_combo.bind('<<ComboboxSelected>>', self.update_time_display)
+        self.minute_combo.bind('<<ComboboxSelected>>', self.update_time_display)
+        self.ampm_combo.bind('<<ComboboxSelected>>', self.update_time_display)
+        
+
         # Separator
         separator = ttk.Separator(self.root, orient="horizontal")
         separator.pack(fill="x", padx=20, pady=20)
@@ -69,18 +128,7 @@ class FileSelector:
             ("onStart", "option4"),
             ("once", "option5")
         ]
-        
-        # Add this to your existing GUI
-        time_frame = tk.LabelFrame(self.root, text="Schedule Time")
-        time_frame.pack(pady=20)
 
-        # Hour dropdown
-        hour_combo = ttk.Combobox(time_frame, values=[f"{i:02d}" for i in range(1, 13)])
-        hour_combo.pack(side="left", padx=5)
-
-        # AM/PM
-        ampm_combo = ttk.Combobox(time_frame, values=["AM", "PM"])
-        ampm_combo.pack(side="left", padx=5)
 
         for text, value in options:
             radio_btn = tk.Radiobutton(options_frame, 
@@ -98,7 +146,89 @@ class FileSelector:
                                bg="orange", fg="white",
                                width=20, height=2)
         process_btn.pack(pady=20)
-    
+
+        # Initial time display update
+        self.update_time_display()
+
+    def get_selected_time_24h(self):
+        try:
+            hour_12 = int(self.selected_hour.get())
+            minute = int(self.selected_minute.get())
+            ampm = self.selected_ampm.get()
+            
+            # Convert to 24-hour format
+            if ampm == "AM":
+                if hour_12 == 12:
+                    hour_24 = 0
+                else:
+                    hour_24 = hour_12
+            else:  # PM
+                if hour_12 == 12:
+                    hour_24 = 12
+                else:
+                    hour_24 = hour_12 + 12
+            
+            return f"{hour_24:02d}:{minute:02d}"
+        
+        except (ValueError, AttributeError):
+            return "00:00"
+
+    def set_time_from_24h(self, time_24h):
+        """Convert 24-hour time string back to 12-hour format for GUI"""
+        try:
+            hour_24, minute = map(int, time_24h.split(':'))
+            
+            # Convert to 12-hour format
+            if hour_24 == 0:
+                hour_12 = 12
+                ampm = "AM"
+            elif hour_24 < 12:
+                hour_12 = hour_24
+                ampm = "AM"
+            elif hour_24 == 12:
+                hour_12 = 12
+                ampm = "PM"
+            else:
+                hour_12 = hour_24 - 12
+                ampm = "PM"
+            
+            # Update GUI
+            self.selected_hour.set(f"{hour_12:02d}")
+            self.selected_minute.set(f"{minute:02d}")
+            self.selected_ampm.set(ampm)
+            
+            # Update display
+            self.update_time_display()
+            
+        except (ValueError, AttributeError):
+            pass
+
+    def update_time_display(self, event=None):
+        """Convert 12-hour time to 24-hour format and update display"""
+        try:
+            hour_12 = int(self.selected_hour.get())
+            minute = int(self.selected_minute.get())
+            ampm = self.selected_ampm.get()
+            
+            # Convert to 24-hour format
+            if ampm == "AM":
+                if hour_12 == 12:
+                    hour_24 = 0  # 12:XX AM = 00:XX
+                else:
+                    hour_24 = hour_12  # 1:XX AM = 01:XX, etc.
+            else:  # PM
+                if hour_12 == 12:
+                    hour_24 = 12  # 12:XX PM = 12:XX
+                else:
+                    hour_24 = hour_12 + 12  # 1:XX PM = 13:XX, etc.
+            
+            # Format as 24-hour string
+            time_24_str = f"{hour_24:02d}:{minute:02d}"
+            self.time_display_label.config(text=time_24_str)
+            
+        except (ValueError, AttributeError):
+            self.time_display_label.config(text="--:--")
+
     def browse_file(self):
         file_path = filedialog.askdirectory(
             title="Select a folder",
@@ -173,7 +303,7 @@ class FileSelector:
         }
         config['RUNTIME'] = {
             'Choice': self.selected_option.get(),
-            'Time': '00:00'  # Default time, can be changed later
+            'Time': self.get_selected_time_24h()
         }
         return config
     
